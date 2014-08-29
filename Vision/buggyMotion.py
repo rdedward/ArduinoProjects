@@ -22,18 +22,33 @@ def detectBlobs(d1):
   if len(contours) > 1:
       cnt = contours[0]
       cv2.drawContours(d1, contours, -1, (255, 255, 255), 3)
-
+      max_w = 0
+      max_h = 0
+      max_x = 0
+      max_y = 0
+      avg_x = 0
+      avg_y = 0
+      count = 0
       for h, cnt in enumerate(contours):
           #hull = cv2.convexHull(cnt)
           rect = cv2.minAreaRect(cnt)
           box = cv2.cv.BoxPoints(rect)
           box = np.int0(box)
+
+          x,y,w,h = cv2.boundingRect(cnt)
+          avg_x += x
+          avg_y += y
+          count += 1
+          if (w*h >max_w*max_h):
+              max_w, max_h, max_x, max_y = w, h, x, y
+      cv2.rectangle(d1,(max_x,max_y),(max_x+max_w,max_y+max_h),(255,255,255),2)
+      cv2.circle(d1, (int(avg_x/count), int(avg_y/count)), 15, (255,255,255), -1)
   return d1
 
 def treatImg(d1):
   d1 = cv2.medianBlur(d1, 5)
   
-  adaptive_thresh_blocksize = 25
+  adaptive_thresh_blocksize = 31
   adaptive_thresh = 10 #10 for okay detection
   d1 = cv2.adaptiveThreshold(d1,
                         255,
@@ -42,10 +57,11 @@ def treatImg(d1):
                         adaptive_thresh_blocksize,
                         adaptive_thresh)
   
-
+  
   kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+  
   d1 = cv2.erode(d1, kernel, iterations = 1)
-  d1 = cv2.dilate(d1, kernel, iterations = 1)
+  d1 = cv2.dilate(d1, kernel, iterations = 5)
   print d1.shape
   return d1
 
@@ -69,7 +85,9 @@ while len(old)< 20:
 
 while True:
   #cv2.imshow( winName, diffImg(t_minus, t, t_plus) )
-  cv2.imshow( winName, treatImg(diffImg2(t_minus, t_plus)) )
+  cv2.imshow( winName, detectBlobs(treatImg(diffImg2(t_minus, t_plus))) )
+  #cv2.imshow( winName, treatImg(diffImg2(t_minus, t_plus)) )
+
   # Read next image
   t_minus = old[0]
   t = old[10]
