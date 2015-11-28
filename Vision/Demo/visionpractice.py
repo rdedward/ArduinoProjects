@@ -89,16 +89,32 @@ while True:
   #frameA = cv2.Canny(frameA, 30, 40)
 
   
-  raw_linesG = cv2.HoughLines(frameA,
+  raw_linesG = cv2.HoughLinesP(frameA,
                                     rho=1,
                                     theta=math.pi / 180,
-                                    threshold=100)
+                                    threshold=100,
+                                    minLineLength = 150,
+                                    maxLineGap = 20)
   frame = cv2_to_cv(frame)
+  '''
+  vert_lines = []
+  if raw_linesG is not None:
+    for line1 in raw_linesG:
+
+      if line1[0] > 0 and line1[0] < pi/4: 
+        vert_lines.append(line1)
+      if line1[0] > 3*pi/4 and line1[0] < pi:
+        vert_lines.append(line1)
+  '''
+
+
 
   if raw_linesG is not None:
+    print raw_linesG[0]
+    print "Bacon"
     for line in raw_linesG:
-      print line
-      draw_linesC(frame, line, (125,20,60))    
+      cv.Line(frame, (int(line[0]),int(line[1])), (int(line[2]),int(line[3])), (200, 140, 2), 10, cv.CV_AA, 0)
+
 
 
   frame = cv_to_cv2(frame)

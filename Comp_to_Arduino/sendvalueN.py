@@ -60,4 +60,4 @@ elif (len(sys.argv) == 3):
   print "Using Arguments"
   ser.write(sys.argv[1]+'\n'+sys.argv[2])
 else:
-  ser.write('40'+'\n'+'20')
+  ser.write('400'+'\n'+'201')
