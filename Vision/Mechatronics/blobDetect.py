@@ -1,6 +1,70 @@
 import cv2
 import numpy as np
 import math
+import serial
+
+def vis_to_ard(locx,locy):
+    servo_midy = 90 #neutral y and x 
+    servo_midx = 100
+
+    servo_miny = 70
+    servo_maxy = 115
+
+    servo_minx = 68
+    servo_maxx = 132
+
+
+    locx = locx-320/2 #difference from center
+    locy = locy-240/2
+
+    width = 130-70
+    height = 115-70
+    newx = width/2*locx/(320/2)+servo_midx #percent of difference from center*center
+    newy = height/2*locy/(240/2)+servo_midy
+
+
+    if(newx < servo_minx):
+        newx = servo_minx
+        print "exceeded minx"
+
+    if(newy < servo_miny):
+        newy = servo_miny
+        print "exceeded miny"
+
+    if(newx > servo_maxx):
+        newx = servo_maxx
+        print "exceeded maxx"
+
+    if(newy > servo_maxy):
+        newy = servo_maxy
+        print "exceeded maxy"
+    
+    sendValue(newx,newy)
+
+
+def sendValue(x,y):
+    try:
+      ser = serial.Serial('/dev/ttyACM1',9600)
+    except serial.SerialException:
+      print "caught exception"
+      ser = serial.Serial('/dev/ttyACM0',9600)
+    ser.write(str(int(x)*10)+'\n'+str(int(y)*10+1)+'\n')
+    print "sent value:", int(x)*10, ":", int(y)*10+1
+
+
+def determineMain(confirmed, frame):
+  max_x, max_y, max_area = 0, 0, 0
+  for bin in confirmed:
+    if max_x == 0 and max_y == 0:
+      max_x = bin.midx
+      max_y = bin.midy
+      continue
+    if bin.area > max_area:
+      max_x = bin.midx
+      max_y = bin.midy
+      max_area = bin.area
+  cv2.circle(frame, (int(max_x), int(max_y)), 4 , (125,255,0), -1) #good
+  vis_to_ard(max_x, max_y)
 
 #############################################################################
 #############################################################################
@@ -197,6 +261,7 @@ while True:
             new_bin = Bin(tuple(box[0]), tuple(
             box[1]), tuple(box[2]), tuple(box[3]))
             new_bin.id = id_num
+            new_bin.area = area
             id_num += 1
             new_bin.area = area
             raw_blobs.append(new_bin)
@@ -236,12 +301,15 @@ while True:
   
   draw_bins(confirmed, conf_contour_frame)
   draw_bins(raw_blobs, raw_contour_frame)
+  
+  #determineMain(confirmed, conf_contour_frame)
+
   cv2.imshow(winName4, conf_contour_frame)
   cv2.imshow(winName5, raw_contour_frame)
 
   key = cv2.waitKey(10)
   if key == 27:
-    cv2.destroyWindow(winName)
+    #cv2.destroyWindow(winName)
     break
 
 print "Goodbye"
